@@ -1,0 +1,26 @@
+# --- Raw DHS data (registration-restricted, multi-GB) - never commit ---
+*.zip
+*.dta
+extracted_ir/
+# directly-downloaded raw files with descriptive names
+Afghanistan*
+Albania*
+Child-Mortality-Analysis-Data-main 2/
+
+# --- Derived microdata caches (one row per birth/child) ---
+cache_univ/
+cache_children/
+
+# --- Python ---
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# --- Binary result artifacts (regenerable via the scripts) ---
+*.parquet
+*.npy
+
+# --- Logs & OS cruft ---
+*.log
+.DS_Store

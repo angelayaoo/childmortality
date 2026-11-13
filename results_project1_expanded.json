@@ -1,0 +1,317 @@
+{
+  "n_countries": 75,
+  "universal_features": [
+    "child_male",
+    "birth_order",
+    "prev_interval",
+    "mother_age_birth",
+    "edu",
+    "edu_years"
+  ],
+  "n_with_wealth": 62,
+  "n_with_urban": 67,
+  "ood_corr_domain_vs_gap": 0.19,
+  "ood_n_pairs": 592,
+  "donor_quality": {
+    "AM42": {
+      "in_domain": 0.612,
+      "mean_transfer": 0.518
+    },
+    "AZ52": {
+      "in_domain": 0.588,
+      "mean_transfer": 0.546
+    },
+    "BD72": {
+      "in_domain": 0.526,
+      "mean_transfer": 0.557
+    },
+    "BD7R": {
+      "in_domain": 0.577,
+      "mean_transfer": 0.546
+    },
+    "BD81": {
+      "in_domain": 0.573,
+      "mean_transfer": 0.551
+    },
+    "BF81": {
+      "in_domain": 0.646,
+      "mean_transfer": 0.581
+    },
+    "BJ71": {
+      "in_domain": 0.592,
+      "mean_transfer": 0.578
+    },
+    "BO51": {
+      "in_domain": 0.584,
+      "mean_transfer": 0.575
+    },
+    "BR31": {
+      "in_domain": 0.661,
+      "mean_transfer": 0.568
+    },
+    "BU71": {
+      "in_domain": 0.582,
+      "mean_transfer": 0.563
+    },
+    "CD81": {
+      "in_domain": 0.631,
+      "mean_transfer": 0.573
+    },
+    "CF31": {
+      "in_domain": 0.611,
+      "mean_transfer": 0.553
+    },
+    "CG61": {
+      "in_domain": 0.548,
+      "mean_transfer": 0.557
+    },
+    "CI62": {
+      "in_domain": 0.581,
+      "mean_transfer": 0.574
+    },
+    "CM82": {
+      "in_domain": 0.618,
+      "mean_transfer": 0.547
+    },
+    "CO72": {
+      "in_domain": 0.555,
+      "mean_transfer": 0.541
+    },
+    "DR61": {
+      "in_domain": 0.621,
+      "mean_transfer": 0.543
+    },
+    "EC01": {
+      "in_domain": 0.665,
+      "mean_transfer": 0.569
+    },
+    "EG61": {
+      "in_domain": 0.598,
+      "mean_transfer": 0.563
+    },
+    "ES01": {
+      "in_domain": 0.65,
+      "mean_transfer": 0.572
+    },
+    "ET8A": {
+      "in_domain": 0.59,
+      "mean_transfer": 0.571
+    },
+    "GA71": {
+      "in_domain": 0.572,
+      "mean_transfer": 0.558
+    },
+    "GH8C": {
+      "in_domain": 0.59,
+      "mean_transfer": 0.569
+    },
+    "GM81": {
+      "in_domain": 0.596,
+      "mean_transfer": 0.564
+    },
+    "GN82": {
+      "in_domain": 0.547,
+      "mean_transfer": 0.531
+    },
+    "GU71": {
+      "in_domain": 0.585,
+      "mean_transfer": 0.559
+    },
+    "GY5I": {
+      "in_domain": 0.588,
+      "mean_transfer": 0.546
+    },
+    "HN62": {
+      "in_domain": 0.56,
+      "mean_transfer": 0.552
+    },
+    "HT71": {
+      "in_domain": 0.59,
+      "mean_transfer": 0.564
+    },
+    "ID71": {
+      "in_domain": 0.593,
+      "mean_transfer": 0.573
+    },
+    "JO81": {
+      "in_domain": 0.484,
+      "mean_transfer": 0.537
+    },
+    "KE91": {
+      "in_domain": 0.536,
+      "mean_transfer": 0.533
+    },
+    "KH82": {
+      "in_domain": 0.647,
+      "mean_transfer": 0.564
+    },
+    "KK42": {
+      "in_domain": 0.521,
+      "mean_transfer": 0.556
+    },
+    "KM61": {
+      "in_domain": 0.598,
+      "mean_transfer": 0.559
+    },
+    "KY61": {
+      "in_domain": 0.6,
+      "mean_transfer": 0.543
+    },
+    "LB81": {
+      "in_domain": 0.587,
+      "mean_transfer": 0.532
+    },
+    "LK02": {
+      "in_domain": 0.52,
+      "mean_transfer": 0.537
+    },
+    "LS81": {
+      "in_domain": 0.561,
+      "mean_transfer": 0.546
+    },
+    "MA43": {
+      "in_domain": 0.568,
+      "mean_transfer": 0.551
+    },
+    "MD81": {
+      "in_domain": 0.58,
+      "mean_transfer": 0.567
+    },
+    "ML8A": {
+      "in_domain": 0.57,
+      "mean_transfer": 0.567
+    },
+    "MM71": {
+      "in_domain": 0.612,
+      "mean_transfer": 0.563
+    },
+    "MR71": {
+      "in_domain": 0.606,
+      "mean_transfer": 0.559
+    },
+    "MV71": {
+      "in_domain": 0.5,
+      "mean_transfer": 0.517
+    },
+    "MW81": {
+      "in_domain": 0.58,
+      "mean_transfer": 0.564
+    },
+    "MX01": {
+      "in_domain": 0.653,
+      "mean_transfer": 0.565
+    },
+    "MZ82": {
+      "in_domain": 0.62,
+      "mean_transfer": 0.565
+    },
+    "NG8B": {
+      "in_domain": 0.633,
+      "mean_transfer": 0.58
+    },
+    "NI82": {
+      "in_domain": 0.533,
+      "mean_transfer": 0.562
+    },
+    "NM61": {
+      "in_domain": 0.559,
+      "mean_transfer": 0.555
+    },
+    "NP82": {
+      "in_domain": 0.651,
+      "mean_transfer": 0.565
+    },
+    "PE6I": {
+      "in_domain": 0.525,
+      "mean_transfer": 0.541
+    },
+    "PG71": {
+      "in_domain": 0.572,
+      "mean_transfer": 0.56
+    },
+    "PH82": {
+      "in_domain": 0.556,
+      "mean_transfer": 0.56
+    },
+    "PY21": {
+      "in_domain": 0.57,
+      "mean_transfer": 0.562
+    },
+    "RW91": {
+      "in_domain": 0.577,
+      "mean_transfer": 0.567
+    },
+    "SD02": {
+      "in_domain": 0.595,
+      "mean_transfer": 0.555
+    },
+    "SL7A": {
+      "in_domain": 0.62,
+      "mean_transfer": 0.574
+    },
+    "SN8S": {
+      "in_domain": 0.597,
+      "mean_transfer": 0.571
+    },
+    "ST51": {
+      "in_domain": 0.654,
+      "mean_transfer": 0.569
+    },
+    "SZ51": {
+      "in_domain": 0.538,
+      "mean_transfer": 0.529
+    },
+    "TD71": {
+      "in_domain": 0.622,
+      "mean_transfer": 0.566
+    },
+    "TG71": {
+      "in_domain": 0.497,
+      "mean_transfer": 0.502
+    },
+    "TH01": {
+      "in_domain": 0.596,
+      "mean_transfer": 0.567
+    },
+    "TJ81": {
+      "in_domain": 0.578,
+      "mean_transfer": 0.536
+    },
+    "TL71": {
+      "in_domain": 0.6,
+      "mean_transfer": 0.549
+    },
+    "TN02": {
+      "in_domain": 0.605,
+      "mean_transfer": 0.564
+    },
+    "TT01": {
+      "in_domain": 0.539,
+      "mean_transfer": 0.543
+    },
+    "TZ82": {
+      "in_domain": 0.584,
+      "mean_transfer": 0.554
+    },
+    "UG91": {
+      "in_domain": 0.58,
+      "mean_transfer": 0.557
+    },
+    "YE61": {
+      "in_domain": 0.609,
+      "mean_transfer": 0.556
+    },
+    "ZA71": {
+      "in_domain": 0.603,
+      "mean_transfer": 0.563
+    },
+    "ZM81": {
+      "in_domain": 0.543,
+      "mean_transfer": 0.547
+    },
+    "ZW72": {
+      "in_domain": 0.566,
+      "mean_transfer": 0.56
+    }
+  }
+}

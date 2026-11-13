@@ -1,0 +1,68 @@
+{
+  "matrix": {
+    "KE->KE": 0.5507,
+    "KE->NG": 0.5302,
+    "KE->RW": 0.5036,
+    "KE->BO": 0.521,
+    "NG->KE": 0.5164,
+    "NG->NG": 0.6362,
+    "NG->RW": 0.5865,
+    "NG->BO": 0.6157,
+    "RW->KE": 0.507,
+    "RW->NG": 0.5975,
+    "RW->RW": 0.5942,
+    "RW->BO": 0.6024,
+    "BO->KE": 0.5066,
+    "BO->NG": 0.6033,
+    "BO->RW": 0.5577,
+    "BO->BO": 0.5996
+  },
+  "decomposition_KE_NG": {
+    "auc_ke_cv": 0.5507,
+    "auc_ke_on_ng": 0.5302,
+    "auc_ng_cv": 0.6362,
+    "concept_drift_gap": 0.1061,
+    "reverse_ng_on_ke": 0.5164,
+    "reverse_concept_drift_gap": 0.0343,
+    "psi": {
+      "child_male": 0.0001,
+      "birth_order": 0.2237,
+      "prev_interval": 0.3366,
+      "mother_age_birth": 0.0109,
+      "edu": 0.3756,
+      "urban": 0.0293,
+      "wealth_q": 0.0516
+    },
+    "domain_auc": 0.791,
+    "wealth_pd_ke": {
+      "1": 0.0286,
+      "2": 0.0356,
+      "3": 0.0347,
+      "4": 0.0346,
+      "5": 0.0257
+    },
+    "wealth_pd_ng": {
+      "1": 0.0849,
+      "2": 0.0873,
+      "3": 0.0725,
+      "4": 0.0721,
+      "5": 0.0696
+    },
+    "mean_pred_on_target": 0.03134,
+    "label_multiplier": 2.535,
+    "brier_raw": 0.0756,
+    "brier_rescaled": 0.0747,
+    "auc_after_rescale": 0.5302,
+    "base_rate_ke": 0.03286,
+    "base_rate_ng": 0.07944
+  },
+  "features": [
+    "child_male",
+    "birth_order",
+    "prev_interval",
+    "mother_age_birth",
+    "edu",
+    "urban",
+    "wealth_q"
+  ]
+}

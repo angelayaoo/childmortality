@@ -1,0 +1,105 @@
+{
+  "flagship": [
+    {
+      "pair": "KE91->NG8B",
+      "detector": "mahalanobis",
+      "detect_auc": 0.676629078384775,
+      "err_spearman": 0.024428667566176027
+    },
+    {
+      "pair": "KE91->NG8B",
+      "detector": "isolation_forest",
+      "detect_auc": 0.7545171324703356,
+      "err_spearman": -0.0002605723367648493
+    },
+    {
+      "pair": "KE91->NG8B",
+      "detector": "knn",
+      "detect_auc": 0.8051560243209169,
+      "err_spearman": -0.08784971435791918
+    },
+    {
+      "pair": "KE91->NG8B",
+      "detector": "gbm_confidence",
+      "detect_auc": 0.47790211979679886,
+      "err_spearman": 0.8460010690076891
+    },
+    {
+      "pair": "NG8B->KE91",
+      "detector": "mahalanobis",
+      "detect_auc": 0.6449962216160434,
+      "err_spearman": -0.16746662067939233
+    },
+    {
+      "pair": "NG8B->KE91",
+      "detector": "isolation_forest",
+      "detect_auc": 0.7067511159143866,
+      "err_spearman": -0.10354291481886645
+    },
+    {
+      "pair": "NG8B->KE91",
+      "detector": "knn",
+      "detect_auc": 0.7041982827055023,
+      "err_spearman": -0.08835305982365711
+    },
+    {
+      "pair": "NG8B->KE91",
+      "detector": "gbm_confidence",
+      "detect_auc": 0.38800095227501996,
+      "err_spearman": 0.9382692897451093
+    },
+    {
+      "pair": "KE91->BO51",
+      "detector": "mahalanobis",
+      "detect_auc": 0.5896059507996679,
+      "err_spearman": 0.040233402151416194
+    },
+    {
+      "pair": "KE91->BO51",
+      "detector": "isolation_forest",
+      "detect_auc": 0.6434556375136793,
+      "err_spearman": 0.007838139398361412
+    },
+    {
+      "pair": "KE91->BO51",
+      "detector": "knn",
+      "detect_auc": 0.6853038201522034,
+      "err_spearman": -0.0753821017501529
+    },
+    {
+      "pair": "KE91->BO51",
+      "detector": "gbm_confidence",
+      "detect_auc": 0.5057491668584604,
+      "err_spearman": 0.9097873062672611
+    },
+    {
+      "pair": "KE91->RW91",
+      "detector": "mahalanobis",
+      "detect_auc": 0.6237602242993435,
+      "err_spearman": 0.1540554331843985
+    },
+    {
+      "pair": "KE91->RW91",
+      "detector": "isolation_forest",
+      "detect_auc": 0.615702771969358,
+      "err_spearman": 0.0894846858317871
+    },
+    {
+      "pair": "KE91->RW91",
+      "detector": "knn",
+      "detect_auc": 0.6977937163295855,
+      "err_spearman": -0.052868563648218965
+    },
+    {
+      "pair": "KE91->RW91",
+      "detector": "gbm_confidence",
+      "detect_auc": 0.5701840074336756,
+      "err_spearman": 0.944023951737314
+    }
+  ],
+  "partB_corr": {
+    "mahalanobis": 0.12,
+    "isolation_forest": 0.11,
+    "knn": 0.186
+  }
+}

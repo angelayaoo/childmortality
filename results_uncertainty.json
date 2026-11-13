@@ -1,0 +1,9 @@
+{
+  "n_pairs": 592,
+  "r_mahalanobis": 0.118,
+  "r_conformal_coverage": 0.075,
+  "r_nonconformity": 0.002,
+  "r_epistemic": 0.067,
+  "r_coverage_vs_baserate": 0.111,
+  "r_epistemic_vs_baserate": 0.035
+}

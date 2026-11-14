@@ -1,0 +1,20 @@
+{
+  "xgb": {
+    "n_pairs": 592,
+    "mean_transfer": 0.5605,
+    "mean_gap": 0.0166,
+    "r_detect_vs_gap": 0.171
+  },
+  "lr": {
+    "n_pairs": 592,
+    "mean_transfer": 0.5615,
+    "mean_gap": 0.0135,
+    "r_detect_vs_gap": 0.227
+  },
+  "mlp": {
+    "n_pairs": 592,
+    "mean_transfer": 0.5391,
+    "mean_gap": 0.0258,
+    "r_detect_vs_gap": 0.241
+  }
+}

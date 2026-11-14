@@ -1,0 +1,10 @@
+{
+  "n_countries": 75,
+  "weighted_in_domain_mean": 0.5772,
+  "weighted_in_domain_median": 0.582,
+  "weighted_transfer_mean": 0.5513,
+  "weighted_transfer_median": 0.5521,
+  "weighted_mean_penalty": 0.0259,
+  "pct_degrading": 72.2,
+  "weighted_drift_gap_mean": 0.0259
+}

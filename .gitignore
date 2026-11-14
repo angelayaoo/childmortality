@@ -24,3 +24,9 @@ __pycache__/
 # --- Logs & OS cruft ---
 *.log
 .DS_Store
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.out

@@ -15,14 +15,13 @@
 
 \setcounter{secnumdepth}{0}
 
-\title{Deploying Child-Mortality Models across Populations: Undetectable Concept Drift and a Validated Monitoring and Adaptation Protocol}
+\title{Do Input-Shift Alarms Predict Cross-Survey Performance Loss? Evidence from DHS Child-Mortality Models}
 
 \author{
-    Angela Yao\textsuperscript{\rm 1}\corresponding
+    Anonymous Author(s)
 }
 \affiliations{
-    \textsuperscript{\rm 1}Independent Researcher\\
-    author@example.com
+    Anonymized for double-blind review
 }
 
 \begin{document}
@@ -30,184 +29,97 @@
 \maketitle
 
 \begin{abstract}
-Machine-learning models that predict under-five child mortality are trained on a single demographic and health survey and then reused in other countries or in later years. We measure what happens when such a model crosses a population boundary, and we test whether out-of-distribution (OOD) detection can warn a deployer before the model fails. Across 75 DHS surveys and 5,550 transfer pairs, using nationally representative sampling weights, in-domain AUC falls from 0.577 to 0.551 on transfer, and the loss is driven by concept drift, a change in the relationship between inputs and mortality. This drift is effectively invisible to monitors: feature-space OOD detectors and uncertainty estimates explain at most 6 percent of the observed failure across gradient-boosted trees, logistic regression, and a neural network alike, and within-country temporal drift over eight to sixteen years trips every detector no better than chance. We therefore propose and validate a deploy-monitor-adapt protocol. A small sentinel cohort of about 300 verified labels estimates the true deployment error at r = 0.87, and few-shot fine-tuning with about 2,000 labels recovers 60 to 80 percent of the drift gap. Two further candidate fixes, invariant feature pruning and SHAP-guided active learning, are tested and falsified.
+A model that predicts child mortality is trained on one demographic and health survey and then reused in a different country or a later year. The standard safeguard against this reuse is out-of-distribution detection: monitor the inputs and raise an alarm when the target population looks different from the training distribution. We ask whether such input-shift alarms actually predict the thing a deployer cares about, namely the loss in performance when the model is transferred. Using 70 Demographic and Health Surveys spanning three decades and a censoring-correct infant-mortality outcome with nationally representative sampling weights, we measure transfer loss as the weighted AUC a local retrain recovers over a transferred model. Transfer loss is real but modest, a mean of 0.010 AUC with 22 percent of transfers losing more than 0.05. Input-shift alarms do not reliably predict this loss: Mahalanobis detectability correlates with transfer loss at r = 0.23, and both Mahalanobis distance and a supervised domain classifier flag high-loss transfers only slightly above chance (AUROC 0.59 and 0.63). The practical conclusion is that input-shift alarms are a weak substitute for measuring performance directly, and deployers of tabular health models should budget for the small amount of local data that monitoring actually requires.
 \end{abstract}
-
-\begin{links}
-    \link{Code}{https://github.com/angelayaoo/childmortality}
-\end{links}
 
 \section{Introduction}
 
-Machine learning for global health is trained in one place and deployed in another. A model that predicts which children are at risk of dying before their fifth birthday is typically estimated from a Demographic and Health Survey (DHS) in a single country, or from a pooled set of surveys, and is then expected to score families in a different country or in the same country several years later \citep{rutstein2006guide, croft2018guide}. This reuse is the default deployment pattern, not an edge case, because ground-truth mortality labels are scarce and expensive, and because building a bespoke model for every target population is often infeasible in resource-constrained settings.
+Machine learning for global health is trained in one place and deployed in another. A model that estimates the risk that a child dies in infancy is typically fit on a Demographic and Health Survey (DHS) in a single country, or on a pooled set of surveys, and is then expected to score families in a different country or in the same country several years later \citep{rutstein2006guide, croft2018guide}. This reuse is the default deployment pattern, not an edge case, because ground-truth mortality labels are expensive and building a bespoke model for every target population is often infeasible in resource-constrained settings.
 
-Distribution shift is the central risk in this workflow \citep{quionero2009dataset, koh2021wilds}. A model is useful only if the relationships it learned in the source population still hold in the target. When those relationships change, the model degrades, and the degradation is invisible until it has already caused harm. The natural defense is out-of-distribution detection: monitor the inputs, the model confidence, or some statistic of the data stream, and raise an alarm when the target looks different from the training distribution \citep{yang2021oodsurvey}. This paper asks a specific and practical question about that defense: \textbf{does OOD detection actually warn a deployer before a child-mortality model fails across populations?}
+Distribution shift is the central risk in this workflow \citep{quionero2009dataset, koh2021wilds}. The standard safeguard is out-of-distribution detection: monitor the inputs, and raise an alarm when the target looks different from the training distribution \citep{yang2021oodsurvey}. A large literature has developed detectors for exactly this purpose \citep{lee2018mahalanobis, liu2020energy, sun2022knn, liu2008isolation}. This paper asks a narrower and more practical question than whether these detectors can see that the target differs: \textbf{does an input-shift alarm tell a deployer when a transferred model will actually lose performance?}
 
-We study this question with three contributions. First, we quantify the generalization failure at scale, using nationally representative sampling weights throughout. Across 75 DHS surveys spanning three decades and 5,550 transfer pairs, weighted in-domain AUC of 0.577 falls to 0.551 when a model is transferred, and ``donor quality,'' the average performance a survey's model achieves when transferred elsewhere, ranges from 0.50 to 0.58 and scales with the source's base mortality rate. Second, we show that the degradation is concept drift, a change in the input-outcome relationship, and that this drift is undetectable in practice. Feature-space OOD detectors such as Mahalanobis distance, isolation forest, and nearest-neighbor distance detect covariate shift well but explain at most 6 percent of the actual failure, and uncertainty monitors based on conformal coverage and ensemble variance explain at most 1 percent. This holds across three model classes, gradient-boosted trees, logistic regression, and a neural network, so the failure is a property of the data, not of the estimator. Within a single country, gaps of eight to sixteen years degrade the model while every detector scores no better than chance. Third, we turn this negative result into a positive, validated protocol. We test four candidate operational fixes and falsify two of them, and we show that the surviving two, a sentinel monitoring cohort and few-shot fine-tuning, are both cheap and effective. The protocol is actionable for deployers: monitor true error, not inputs, and adapt with a few local labels, not a full retrain.
+Detecting that two populations differ is not the same as predicting that a model will fail. The two tasks are distinct, and prior work has noted the gap \citep{quionero2009dataset}. Our contribution is to measure this gap directly, at scale, for a real deployment setting. We make three points. First, we build a censoring-correct child-mortality outcome, infant death before twelve months, so that every included child is either observed to die in infancy or observed to survive it. Second, we measure transfer loss across 70 surveys and 552 source-to-target pairs using nationally representative sampling weights, and find that it is real but modest. Third, we show that input-shift alarms, both unsupervised Mahalanobis distance and a supervised domain classifier, predict this loss only weakly, flagging high-loss transfers slightly above chance. The implication is that input-shift detection is a weak substitute for measuring performance directly, and that a deployer is better served by a small budget of local labels than by a sophisticated alarm.
 
-Our vision is explicitly about deployability. We treat OOD detection not as a benchmark task but as a safety mechanism, and we ask whether that mechanism works when it matters. The answer is largely no, which we argue is itself a contribution: it tells the community that the most widely recommended defense for distribution shift is unreliable for tabular health models, and it points toward the mechanisms that do work.
+\section{Data and Outcome}
 
-\section{Related Work}
+We use the DHS Individual Recode files, the standard women's survey instrument collected across low- and middle-income countries \citep{rutstein2006guide, croft2018guide}. The Individual Recode records one row per interviewed woman and embeds the full birth history as wide arrays, one set of columns per birth. We reshape these arrays into child-level records and retain the 70 surveys with at least 30 observed infant deaths, spanning 68 countries and DHS phases II through IX, roughly 1990 to 2022. Two further surveys are excluded because their files omit the age-at-death variable.
 
-Out-of-distribution detection has focused almost entirely on vision and language, where the standard recipe is to fit a model on one dataset and score the distance of a test input to the training distribution. Common detectors include Mahalanobis distance in feature space \citep{lee2018mahalanobis}, energy-based scores \citep{liu2020energy}, and nearest-neighbor density \citep{sun2022knn}, with unsupervised anomaly detectors such as isolation forest \citep{liu2008isolation} serving as a baseline. Surveys of this literature \citep{yang2021oodsurvey} note that most work evaluates detectors on semantic shifts that are easy to see in the inputs. Our setting is different and harder: the inputs barely change while the outcome relationship does.
+The outcome definition is central to the validity of the analysis. A na\"ive label that takes a child alive at interview as a survivor to age five is wrong, because a child alive at six months has not been observed for the full five years, and differing follow-up lengths across surveys can manufacture the appearance of drift. We therefore use a fixed, fully observed horizon. We restrict to children born 12 to 59 months before the interview, so that every child has been observed for the full first year of life, and we label a death as infant death if the age at death is below 12 completed months. Every included child is then either observed to die in infancy or observed to survive it, which removes the censoring artifact.
 
-Distribution shift decomposes into covariate shift, where the input distribution changes, label shift, where the class prevalence changes, and concept drift, where the conditional distribution of the outcome given the inputs changes \citep{quionero2009dataset, gama2014concept}. Concept drift is the failure mode that matters most for deployed health models, because it reflects real changes in how risk factors map to outcomes, for example as a mortality transition concentrates deaths among the poor. We are not aware of prior work that measures how poorly standard detectors perform specifically against concept drift in tabular health data.
+Because the DHS uses a complex survey design, we weight every estimate. Each child inherits the mother's sample weight, the standard approach for child-level DHS analyses \citep{croft2018guide}. We pass these weights to the training loss and evaluate with a weighted Mann-Whitney AUC and a weighted Brier score, so that all reported rates and distributions are nationally representative.
 
-Uncertainty quantification offers an alternative monitor. Conformal prediction provides distribution-free coverage guarantees that are known to break under label shift \citep{vovk2005algorithmic, angelopoulos2021conformal}, and ensemble methods estimate epistemic uncertainty as the disagreement among models \citep{lakshminarayanan2017ensembles, kendall2017uncertainty}. We evaluate both families and find them no better than feature-space detectors for our task.
+\section{Methods}
 
-Machine learning for child mortality has largely treated prediction as a one-time modeling exercise \citep{bountogo2023machine}, with less attention to what happens when the model is moved. Our contribution is to study the deployment step itself: the transfer, the drift, and the monitoring and adaptation that a deployer actually needs.
+\subsection{Transfer Loss}
 
-\section{Data and Setup}
+For each survey we train a gradient-boosted tree model \citep{chen2016xgboost} to predict infant death from six features available in every DHS phase: child sex, birth order, preceding birth interval, mother's age at birth, and maternal education in level and in years. We measure ranking quality with weighted area under the ROC curve (AUC). In-domain performance is the weighted three-fold cross-validation AUC on a survey. For a source-to-target pair, transfer performance is the weighted AUC of the source model applied to the target, and \emph{transfer loss} is the difference between the target's in-domain AUC and the transferred AUC. Transfer loss is nonnegative in expectation and measures how much ranking performance a deployer leaves on the table by not retraining locally.
 
-\subsection{Data}
+\subsection{Input-Shift Alarms}
 
-We use the DHS Individual Recode files, the standard women's survey instrument collected across low- and middle-income countries \citep{rutstein2006guide, croft2018guide}. The Individual Recode records one row per interviewed woman aged 15 to 49 and embeds the full birth history as wide arrays, with one set of columns per birth. We reshape these arrays into child-level records, one row per birth in the five years preceding the interview, yielding the standard unit for child-mortality analysis. Our outcome is binary under-five mortality: a child counts as a death if the survival flag indicates death, which by construction falls before age five for a birth in the last five years.
+We evaluate two kinds of input-shift alarm. The first is unsupervised Mahalanobis distance \citep{lee2018mahalanobis}, computed from a Gaussian fit to the source features. The second is a supervised domain classifier, a gradient-boosted model trained to distinguish source from target on the features alone \citep{quionero2009dataset}. For each source-to-target pair we score the detectability of the target as the AUC of each alarm in separating source from target, and we ask whether that detectability predicts the transfer loss.
 
-We work with 75 surveys across 78 countries, spanning DHS phases II through IX, roughly 1990 to 2022, after dropping surveys with fewer than 50 observed deaths for numerical stability and one survey whose Individual Recode lacks a birth history. Child-level sample sizes range from roughly 1,000 to 27,000 rows per survey.
-
-\subsection{Features}
-
-A key constraint is that the survey instrument itself evolves across phases. Wealth index and urban-rural residence are absent from the oldest surveys. We therefore define two feature sets. The universal set contains six variables available in every phase: child sex, birth order, preceding birth interval, mother's age at birth, maternal education level, and maternal education in years. The rich set adds urban-rural residence and wealth quintile and is available for phase IV and later. We report results on the universal set for cross-survey comparability and use the rich set for mechanistic analysis of the flagship country pair.
-
-\subsection{Metrics, Detectors, and Adaptation Methods}
-
-We measure ranking quality with the area under the ROC curve (AUC). Because the DHS uses a complex survey design, we weight every estimate by the sampling weight: each child inherits the mother's sample weight (v005), the standard approach for child-level DHS analyses \citep{croft2018guide}. We pass these weights to the training loss (the sample-weight argument of each estimator) and evaluate with a weighted Mann-Whitney AUC and a weighted Brier score, so that every reported rate and distribution is nationally representative. For a source-to-target pair, the \emph{concept-drift gap} is the weighted oracle AUC of a model trained and validated on the target minus the weighted AUC of the source model applied to the target; it is nonnegative in expectation and measures how much ranking performance a deployer leaves on the table by not retraining locally. In-domain performance is estimated by weighted three-fold cross-validation on each survey, and transfer performance is the source model's weighted AUC on the full target.
-
-We compare four families of monitors. Feature-space OOD detection uses a domain classifier plus three standard detectors, Mahalanobis distance \citep{lee2018mahalanobis}, isolation forest \citep{liu2008isolation}, and k-nearest-neighbor distance \citep{sun2022knn}. For each detector we fit on a held-out source split as the in-distribution reference, score the target, and report the detection AUC, the degree to which the detector separates source from target. Uncertainty monitoring uses conformal prediction, whose coverage shortfall relative to a nominal 90 percent level is known to signal shift \citep{vovk2005algorithmic, angelopoulos2021conformal}, and ensemble epistemic uncertainty, the variance across ten bagged gradient-boosted trees \citep{lakshminarayanan2017ensembles}.
-
-We then evaluate four adaptation and monitoring strategies. Few-shot adaptation continues boosting the source trees on a small target sample via warm start \citep{chen2016xgboost}. Sentinel monitoring estimates the deployment Brier score on a small field-verified cohort. Invariant feature pruning drops the features whose SHAP importance diverges most between source and target \citep{lundberg2017shap}. SHAP-guided active learning spends the label budget on subpopulations with the largest gradient divergence. To test whether our findings are an artifact of a single estimator, we run the core transfer and detection analysis on three model classes: gradient-boosted trees \citep{chen2016xgboost}, L2-regularized logistic regression, and a small multilayer perceptron. All experiments use pandas, scikit-learn, and XGBoost on a single CPU.
+We select eight source surveys to span geography and survey phase: Kenya, Nigeria, Bolivia, Egypt, Indonesia, the Philippines, Rwanda, and Haiti. For each source we pair it with all 69 remaining surveys, giving 552 source-to-target pairs. This is the full set of transfer directions for these sources, not a subsample, and we report it as such.
 
 \section{Results}
 
-\subsection{Transfer Degrades, and Donor Quality Varies Widely}
+\subsection{Transfer Loss Is Real but Modest}
 
-Figure~\ref{fig:matrix} shows the full cross-survey transfer matrix. The diagonal is systematically higher than the off-diagonal, confirming that a locally trained model beats a transferred one. Weighted in-domain AUC averages 0.577 (range 0.41 to 0.68), while weighted transferred AUC averages 0.551, a mean penalty of 0.026 with 72 percent of pairs degrading. The magnitude is modest in absolute terms because under-five death is only weakly predictable from tabular covariates, which is itself an important fact: the signal is fragile, so small drifts matter.
-
-Donor quality is highly uneven. Averaging each survey's transfer performance to all others, the best donors (Burkina Faso, Nigeria, Benin, Bolivia) reach 0.58, while the worst (Togo, Maldives, Kenya, Armenia) fall to 0.50 to 0.53. Figure~\ref{fig:donor} shows this as a scatter of in-domain versus mean transfer AUC. Donor quality correlates with the source's own base mortality rate at r = 0.29: high-mortality settings are both more predictable and more transferable, because a stronger signal survives the trip. This ranking is a practical tool for a deployer choosing which survey to train on.
+Weighted in-domain AUC averages 0.566 across the 70 surveys, and transferred AUC averages 0.556. Transfer loss has mean 0.010 and median 0.018, with 64 percent of pairs losing performance and 22 percent losing more than 0.05 AUC. Figure~\ref{fig:loss} shows the distribution. The loss is small in absolute terms because infant death is only weakly predictable from tabular covariates, which is itself an important fact: the signal is fragile, but so is the amount that can be lost.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.9\columnwidth]{Figures/fig_donor}
-\caption{Donor quality. Each point is one survey's in-domain AUC versus its mean transfer AUC to all other surveys. Points above the diagonal transfer better than they predict locally. High-mortality West African surveys are the best donors, while low-mortality surveys such as Kenya, Togo, and Maldives are the worst.}
-\label{fig:donor}
+\includegraphics[width=0.9\columnwidth]{Figures/fig_loss_dist}
+\caption{Distribution of transfer loss across 552 source-to-target pairs. Transfer loss is the weighted AUC a local retrain recovers over a transferred model. The mean is 0.010 and 22 percent of pairs lose more than 0.05 AUC.}
+\label{fig:loss}
 \end{figure}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.85\textwidth]{Figures/fig_transfer_matrix}
-\caption{Cross-survey transfer AUC for 75 DHS surveys. Rows are training surveys and columns are test surveys. The diagonal (in-domain cross-validation) is systematically higher than the off-diagonal transfer, and donor quality varies widely: high-mortality West African surveys transfer best, while low-mortality surveys transfer poorly.}
-\label{fig:matrix}
-\end{figure*}
+\subsection{Input-Shift Alarms Predict Loss Only Weakly}
 
-\subsection{The Degradation Is Concept Drift, and Detectors Miss It}
-
-We decompose the transfer gap and ask which monitor would have warned the deployer. The first candidate is feature-space OOD detection. For each source-to-target pair we measure how detectable the target is in input space, using a domain classifier and three standard detectors, Mahalanobis distance \citep{lee2018mahalanobis}, isolation forest \citep{liu2008isolation}, and k-nearest-neighbor distance \citep{sun2022knn}. Covariate shift is easy to see: the domain classifier reaches 0.90 AUC, and the three distance detectors reach 0.68 to 0.81. But detectability does not translate into a warning about failure. Figure~\ref{fig:detectors} plots, for 592 source-to-target pairs, each detector's out-of-distribution score against the actual concept-drift gap, the AUC a local retrain would recover. The correlations are 0.12 (Mahalanobis), 0.11 (isolation forest), and 0.19 (nearest neighbor). A detector that explains 4 percent of the failure variance is not a safety mechanism.
-
-Crucially, this failure is not an artifact of gradient-boosted trees. Repeating the transfer and detection analysis with L2-regularized logistic regression and a small multilayer perceptron, the correlation between Mahalanobis detectability and the concept-drift gap is 0.23 and 0.24 respectively, and the transfer penalty remains positive for all three estimators. Across three model classes, feature-space detectability explains at most 6 percent of the failure variance, which indicates that the failure is a fundamental property of tabular health data, not a brittle property of XGBoost.
-
-The reason is mechanistic. Concept drift changes the ranking of risk, while feature-space detectors see only the input distribution. A population can look nearly identical to the training distribution in inputs, yet have a different mapping from inputs to mortality, and no input-based detector can see that.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.9\textwidth]{Figures/fig_detectors_fail}
-\caption{Feature-space OOD detectability does not predict model failure. Each panel plots, for 592 source-to-target pairs, the detector's out-of-distribution score (x-axis) against the concept-drift gap, the AUC a local retrain would recover (y-axis). Correlations are 0.12, 0.11, and 0.19, so covariate-shift detectability explains at most 4 percent of deployment failure.}
-\label{fig:detectors}
-\end{figure*}
-
-\subsection{Uncertainty Monitors Fail Too, and Temporal Drift Is Worst}
-
-We then test the natural alternative: monitor the model's own uncertainty rather than the inputs. Conformal prediction provides a coverage guarantee that breaks under label shift, so its coverage shortfall should signal drift \citep{vovk2005algorithmic, angelopoulos2021conformal}. Ensemble epistemic uncertainty, the variance across a bagged model \citep{lakshminarayanan2017ensembles}, should rise when the model is out of its element. Neither works. Across the 592 pairs, conformal coverage shortfall correlates with the concept-drift gap at r = 0.075, and ensemble epistemic uncertainty at r = 0.067. Gradient-boosted trees are overconfident, and their ensemble variance carries little shift signal. Uncertainty tracks calibration, not ranking, and concept drift is a ranking failure.
-
-The most concerning case is temporal, and it is not confined to a single country. Only two countries in our corpus have multiple survey rounds, but both tell the same story. For Bangladesh, training on 2014 and testing on 2022 produces a concept-drift gap of 0.028, comparable to a cross-border transfer, as weighted under-five mortality falls from 41 to 30 per 1,000 and the risk relationships reorganize. Yet every detector scores no better than chance, near 0.50, because the same country and the same questionnaire produce almost no covariate shift to trip an alarm. For Armenia, which spans 2000 to 2016, the mortality decline is steeper still, from 37 to 5 per 1,000, roughly a seven-fold reduction. Here the covariate shift is larger, because Armenia developed rapidly over the period, so the detectors do notice, but only weakly, with detectability around 0.56, and conformal coverage actually improves rather than flagging the shift, because a model that under-predicts a falling base rate covers the majority class more easily. In both countries the model degrades silently, and no monitor gives a useful warning. Longitudinal drift is the stealthiest failure mode: it is invisible either because the inputs do not change, or because the change is not what any detector is looking for.
-
-\subsection{The Broken Mechanism Is Localizable}
-
-Although drift cannot be detected from inputs, it can be explained after the fact. Figure~\ref{fig:wealth} shows SHAP values \citep{lundberg2017shap} for wealth across the flagship pair Kenya to Nigeria. In Kenya, wealth is a weak, nonmonotonic predictor of mortality. In Nigeria, it becomes strongly protective: moving from the second to the richest wealth quintile shifts the mortality log-odds by roughly 0.27. Education and urban residence gain importance in Nigeria, while maternal age and child sex lose importance. This localization matters for deployability because it tells a deployer which relationships to re-audit, even if it cannot be turned into a running detector.
+Figure~\ref{fig:alarm} plots each alarm's detectability against transfer loss. Mahalanobis detectability correlates with loss at r = 0.23, and the domain classifier at r = 0.05. The relationship is weak in both cases, and the supervised domain classifier, which is the better shift detector, is the weaker loss predictor because it saturates near perfect separation for most country pairs. The overall correlation is an average over eight sources whose individual correlations range from r = $-0.09$ to $+0.47$ for Mahalanobis and from $-0.25$ to $+0.35$ for the domain classifier, so no single source drives the result, and for several sources the relationship is even negative.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.9\columnwidth]{Figures/fig_wealth_flip}
-\caption{Concept drift isolated to a single feature. Mean SHAP contribution of wealth to mortality log-odds, by wealth quintile, for a Kenya-trained model (blue) and a Nigeria-trained model (red). Wealth is weak and nonmonotonic in Kenya but strongly protective in Nigeria, the concrete mechanism that breaks a transferred model.}
-\label{fig:wealth}
+\includegraphics[width=\columnwidth]{Figures/fig_alarm_vs_loss}
+\caption{Input-shift detectability does not reliably predict transfer loss. Each panel plots, for 552 source-to-target pairs, an alarm's out-of-distribution score (x-axis) against transfer loss (y-axis). Correlations are r = 0.23 for Mahalanobis distance and r = 0.05 for a domain classifier.}
+\label{fig:alarm}
 \end{figure}
 
-\section{A Validated Deploy-Monitor-Adapt Protocol}
-
-The negative results leave a deployer with a clear question: if input and confidence monitors both fail, what should one actually do? We tested four candidate fixes, reported in Table~\ref{tab:methods}, and falsified two of them.
-
-\begin{table*}[t]
-\centering
-\begin{tabular}{lll}
-\toprule
-Method & Verdict & Key result \\
-\midrule
-Invariant feature pruning & Fails & lowers transfer AUC (0.530 to 0.477) \\
-Few-shot tree updating & Works & 2,000 labels recover 60 to 80 percent of the gap \\
-Sentinel cohort monitoring & Works & 300 labels estimate error at r = 0.87 \\
-SHAP-guided active learning & Fails & no better than random (0.580 vs.\ 0.591) \\
-\bottomrule
-\end{tabular}
-\caption{Four candidate fixes for the scheduled-retraining playbook, tested on the flagship Kenya-to-Nigeria transfer. Two survive; two are falsified with a clear mechanistic reason.}
-\label{tab:methods}
-\end{table*}
-
-\subsection{Sentinel Monitoring}
-
-Since input monitoring is provably useless for concept drift, the only reliable monitor is to measure the error itself. A sentinel cohort is a small, continuously field-verified random sample whose true outcome is recorded. We find that about 300 labels suffice: across 592 pairs, the error (Brier score) estimated from a 300-label sentinel correlates with the true deployment error at r = 0.87, versus 0.12 for the best feature-space detector. Figure~\ref{fig:sentinel} shows that the estimate converges quickly, reaching a mean absolute error of 0.014 with 200 labels and 0.009 with 500. Two details matter. First, the monitored quantity must be error or calibration, not AUC, because AUC requires many positive cases and is unstable on small cohorts. Second, this monitor captures label shift and calibration drift, the operationally relevant quantities for a threshold-based risk screener, even though it does not capture ranking drift.
+The more operationally meaningful question is whether an alarm can flag the transfers that matter, namely those with a prespecified meaningful loss. Figure~\ref{fig:auroc} reports the AUROC of each alarm for flagging transfers with loss above 0.05. Mahalanobis distance reaches 0.59 and the domain classifier 0.63, only slightly above the 0.50 chance baseline. Raising an alarm on the top fifth of Mahalanobis scores flags high-loss transfers at a precision of 0.19, against a baseline prevalence of 0.16. In short, an input-shift alarm is a weak substitute for measuring performance directly.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.9\columnwidth]{Figures/fig_sentinel}
-\caption{A sentinel cohort of about 200 verified labels estimates the deployment Brier score to within 0.014, and 500 labels to within 0.009. Monitoring true error on a small cohort is the one monitor that works, because it measures the quantity that matters rather than a proxy for it.}
-\label{fig:sentinel}
+\includegraphics[width=0.85\columnwidth]{Figures/fig_highloss_auroc}
+\caption{AUROC of each input-shift alarm for flagging source-to-target pairs whose transfer loss exceeds 0.05 AUC. Both alarms are only slightly above chance, so they are unreliable safety mechanisms.}
+\label{fig:auroc}
 \end{figure}
-
-\subsection{Few-Shot Adaptation}
-
-When the sentinel flags drift, the response should be cheap. Full local retraining needs tens of thousands of labels. Few-shot fine-tuning does not. Figure~\ref{fig:fewshot} shows the recovery curve for Kenya to Nigeria. With about 2,000 labels, a warm-started model, which continues boosting the source trees on the local sample, recovers 60 to 80 percent of the drift gap, and cold-start training on the same 2,000 labels performs comparably. The warm start earns its keep at very small budgets, below 500 labels, where a cold-started model collapses to random performance while the warm-started model retains the source signal. Label-shift recalibration is an additional free lever. On the flagship pair the source base rate is 3.3 percent while the target base rate is 7.9 percent, so the source model under-predicts target risk by a factor of 2.5, and a rank-preserving rescale of the predicted probabilities to the target base rate fixes the Brier score from 0.0756 to 0.0747 without changing the ranking. This matters because a threshold-based screener consumes probabilities, not ranks, so a calibration error translates directly into a triage error.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.9\columnwidth]{Figures/fig_fewshot}
-\caption{Few-shot adaptation recovers most of the drift gap. AUC on the held-out target as a function of the number of local labels, for warm-start tree continuation (blue) and cold start (dashed). About 2,000 labels recover 60 to 80 percent of the gap toward the full-retrain oracle, and warm start avoids collapse at very small budgets.}
-\label{fig:fewshot}
-\end{figure}
-
-\subsection{What Does Not Work, and Why}
-
-Two proposals fail and deserve to be reported. Invariant feature pruning, which drops features whose relationship to the outcome appears volatile across domains, lowers transfer AUC rather than raising it, because every feature is a weak but positive predictor in every domain; the drift is in the overall strength and base rate, not in a sign flip of any single feature. SHAP-guided active learning, which would spend the label budget on subpopulations where gradients diverge most, performs no better than random sampling, because the source model's SHAP values on unlabeled target features cannot reveal the target's own gradients, making the guidance circular. Reporting these failures matters: it shows the protocol is the result of disciplined testing rather than post-hoc justification.
-
-\section{Discussion and Deployability}
-
-The deployability vision of this paper is that a safety mechanism must be evaluated by whether it works when it matters, not by whether it works on a benchmark. OOD detection is the community's default answer to distribution shift, and for tabular global-health models it largely fails: the drift that breaks the model is concept drift, which leaves no trace in the inputs or in model confidence. The practical consequence is a shift in strategy from detection to mitigation. A deployer should stop trying to predict the failure and instead make the response cheap. Monitor true error on a small sentinel cohort, because that is the only signal that is both reliable and cheap. Adapt with few-shot fine-tuning, because that is the only response that is both effective and affordable. Recalibrate for label shift, because it is free. Do not rely on feature-space detectors, uncertainty monitors, feature pruning, or pre-deployment active learning, all of which we show to be ineffective for this problem.
-
-To be precise about the novelty, retraining a model on new labels is not a new idea, and supervised adaptation is standard practice. What is new is the empirical quantification under resource constraints. Unsupervised OOD detection is a heavily cited, actively researched family of methods, and it is the first tool a deployer reaches for because it costs nothing in labels. We show that this free lunch does not exist: the detectors fail precisely on the drift that matters. The practical question then becomes how many labels a deployer actually needs, and we answer it. Proving that the number is small, about 300 labels to monitor and about 2,000 to adapt, is the operational breakthrough for resource-constrained settings, because it converts a vague mandate to retrain into a concrete, affordable budget, and it stands in direct contrast to the proven failure of the unsupervised alternative. The contribution is therefore the quantification, not the existence, of the mitigation.
-
-The numbers translate directly into a budget. For a deployment to a new population, a deployer should budget roughly 300 verified labels for ongoing monitoring and roughly 2,000 labels for the first adaptation, a reduction of one to two orders of magnitude over full retraining. Table~\ref{tab:budget} summarizes the cost, which is achievable in settings where ground-truth mortality data is scarce but not absent.
 
 \begin{table}[t]
 \centering
-\begin{tabular}{ll}
+\begin{tabular}{llll}
 \toprule
-Component & Cost \\
+Alarm & r vs.\ loss & AUROC & r range \\
 \midrule
-Label-shift recalibration & 0 labels (base rate only) \\
-Sentinel monitoring & about 300 verified labels \\
-Few-shot adaptation & about 2,000 local labels \\
-Full retraining (baseline) & 10,000 to 30,000 labels \\
+Mahalanobis & 0.23 & 0.59 & $[-0.09,0.47]$ \\
+Domain clf. & 0.05 & 0.63 & $[-0.25,0.35]$ \\
 \bottomrule
 \end{tabular}
-\caption{Label budget of the proposed protocol versus full retraining. The protocol lowers the cost of staying current by one to two orders of magnitude.}
-\label{tab:budget}
+\caption{How well input-shift alarms predict transfer loss across 552 source-to-target pairs. AUROC is the alarm's ability to flag transfers with loss above 0.05, and the r range is across the eight sources. Both alarms are weak, and several per-source correlations are negative.}
+\label{tab:alarms}
 \end{table}
+
+\section{Related Work}
+
+Out-of-distribution detection has concentrated on vision and language, where the standard recipe fits a model on one dataset and scores the distance of a test input to the training distribution \citep{lee2018mahalanobis, liu2020energy, sun2022knn}, with unsupervised anomaly detectors such as isolation forest as a baseline \citep{liu2008isolation}. Distribution shift decomposes into covariate shift, where the inputs change, label shift, where the class prevalence changes, and concept drift, where the conditional outcome changes \citep{quionero2009dataset, gama2014concept}. Prior work notes that detecting shift is distinct from predicting its harm \citep{quionero2009dataset}. Our contribution is to quantify that distinction for tabular health data, where the inputs change little while the outcome relationship changes, the regime in which input-based detectors are least able to help.
+
+Machine learning for child mortality has mostly treated prediction as a one-time exercise \citep{bountogo2023machine}. We study the deployment step itself, and we do so with an outcome definition that matches the DHS life-table convention of restricting to fully exposed children \citep{croft2018guide}.
 
 \section{Limitations}
 
-Our estimates apply the DHS sampling weights, but the weight is inherited from the mother and does not correct for all design effects, such as within-cluster correlation, which future work should model. The absolute AUC values are moderate because rare mortality is only weakly predictable from tabular covariates. The longitudinal analysis rests on the only two multi-round countries available, Bangladesh and Armenia, and Armenia's later rounds have few deaths, so its concept-drift gap is noisy; the broader temporal claim should be confirmed as more multi-round surveys become available. The neural network baseline did not fully converge and was trained without sample weights, though its qualitative conclusion matches the other two estimators. Finally, the sentinel monitor detects label shift and calibration drift but not ranking drift, which remains genuinely hard to monitor without many labels.
+The transfer loss is measured with gradient-boosted trees; other estimators may shift the absolute numbers, though the weak alarm-to-loss relationship should persist. The eight sources are chosen for diversity but are not all surveys, and the conclusion should be read as covering these directions. The analysis applies sampling weights but does not model within-cluster correlation. Finally, our alarm evaluation uses a retrospective sample of targets; a prospective deployment would raise alarms online, which is the natural next step.
 
 \section{Conclusion}
 
-We measured what happens when a child-mortality model crosses a population boundary, and we found that the failure is concept drift, that it is undetectable by input-based and confidence-based monitors, and that it is worst within a single country over time. We turned this negative result into a validated protocol: monitor true error on a small sentinel cohort and adapt with few-shot fine-tuning, while discarding the fixes that do not work. The broader lesson for deployable AI is that detection is often the wrong tool, and that a cheap, reliable mitigation can be more valuable than an accurate alarm.
+We asked whether an input-shift alarm tells a deployer when a transferred child-mortality model will lose performance. The answer, on a censoring-correct infant-mortality outcome across 70 surveys and 552 pairs, is largely no: transfer loss is real but modest, and input-shift alarms predict it only weakly, flagging high-loss transfers slightly above chance. For deployable AI, this means that monitoring the inputs is a weak substitute for monitoring performance, and that a small budget of verified local labels, whose exact size we leave to future work, is likely the more reliable safeguard.
 
 \bibliography{refs}
 

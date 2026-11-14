@@ -1,0 +1,10 @@
+{
+  "n_surveys": 70,
+  "n_pairs": 552,
+  "in_domain_mean": 0.5661,
+  "transfer_mean": 0.5559,
+  "loss_mean": 0.0102,
+  "pct_loss_gt_005": 22.1,
+  "r_mahal_vs_loss": 0.23,
+  "r_domain_vs_loss": 0.048
+}

@@ -30,3 +30,4 @@ __pycache__/
 *.bbl
 *.blg
 *.out
+cache_infant/

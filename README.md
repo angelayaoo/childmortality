@@ -72,6 +72,7 @@ input- or confidence-based OOD detectors.
 08d_shap_al.py             # playbook method 4 (SHAP-guided active learning)
 08e_figures.py             # recovery-curve + sentinel-convergence figures
 
+paper/                     # DAI workshop paper (AAAI-2027 format): source, PDF, bib, figures
 figs/                      # all result figures (fig1–fig15)
 results_*.json             # aggregate result summaries
 ```

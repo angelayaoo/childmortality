@@ -13,7 +13,7 @@
 /TemplateVersion (2027.2)
 }
 
-\setcounter{secnumdepth}{0}
+\setcounter{secnumdepth}{2}
 
 \title{Do Input-Shift Alarms Predict Cross-Survey Performance Loss? Evidence from DHS Child-Mortality Models}
 
@@ -40,11 +40,23 @@ Distribution shift is the central risk in this workflow \citep{quionero2009datas
 
 Detecting that two populations differ is not the same as predicting that a model will fail. The two tasks are distinct, and prior work has noted the gap \citep{quionero2009dataset}. Our contribution is to measure this gap directly, at scale, for a real deployment setting. We make three points. First, we build a censoring-correct child-mortality outcome, infant death before twelve months, so that every included child is either observed to die in infancy or observed to survive it. Second, we measure transfer loss across 70 surveys and 552 source-to-target pairs using nationally representative sampling weights, and find that it is real but modest. Third, we show that input-shift alarms, both unsupervised Mahalanobis distance and a supervised domain classifier, predict this loss only weakly, flagging high-loss transfers slightly above chance. The implication is that input-shift detection is a weak substitute for measuring performance directly, and that a deployer is better served by a small budget of local labels than by a sophisticated alarm.
 
+\section{Related Work}
+
+Out-of-distribution detection has concentrated on vision and language, where the standard recipe fits a model on one dataset and scores the distance of a test input to the training distribution \citep{lee2018mahalanobis, liu2020energy, sun2022knn}, with unsupervised anomaly detectors such as isolation forest as a baseline \citep{liu2008isolation}. Distribution shift decomposes into covariate shift, where the inputs change, label shift, where the class prevalence changes, and concept drift, where the conditional outcome changes \citep{quionero2009dataset, gama2014concept}. Prior work notes that detecting shift is distinct from predicting its harm \citep{quionero2009dataset}. Our contribution is to quantify that distinction for tabular health data, where the inputs change little while the outcome relationship changes, the regime in which input-based detectors are least able to help.
+
+Machine learning for child mortality has mostly treated prediction as a one-time exercise \citep{bountogo2023machine}. We study the deployment step itself, and we do so with an outcome definition that matches the DHS life-table convention of restricting to fully exposed children \citep{croft2018guide}.
+
 \section{Data and Outcome}
+
+\subsection{Data}
 
 We use the DHS Individual Recode files, the standard women's survey instrument collected across low- and middle-income countries \citep{rutstein2006guide, croft2018guide}. The Individual Recode records one row per interviewed woman and embeds the full birth history as wide arrays, one set of columns per birth. We reshape these arrays into child-level records and retain the 70 surveys with at least 30 observed infant deaths, spanning 68 countries and DHS phases II through IX, roughly 1990 to 2022. Two further surveys are excluded because their files omit the age-at-death variable.
 
+\subsection{Outcome Definition}
+
 The outcome definition is central to the validity of the analysis. A na\"ive label that takes a child alive at interview as a survivor to age five is wrong, because a child alive at six months has not been observed for the full five years, and differing follow-up lengths across surveys can manufacture the appearance of drift. We therefore use a fixed, fully observed horizon. We restrict to children born 12 to 59 months before the interview, so that every child has been observed for the full first year of life, and we label a death as infant death if the age at death is below 12 completed months. Every included child is then either observed to die in infancy or observed to survive it, which removes the censoring artifact.
+
+\subsection{Weighting}
 
 Because the DHS uses a complex survey design, we weight every estimate. Each child inherits the mother's sample weight, the standard approach for child-level DHS analyses \citep{croft2018guide}. We pass these weights to the training loss and evaluate with a weighted Mann-Whitney AUC and a weighted Brier score, so that all reported rates and distributions are nationally representative.
 
@@ -57,6 +69,8 @@ For each survey we train a gradient-boosted tree model \citep{chen2016xgboost} t
 \subsection{Input-Shift Alarms}
 
 We evaluate two kinds of input-shift alarm. The first is unsupervised Mahalanobis distance \citep{lee2018mahalanobis}, computed from a Gaussian fit to the source features. The second is a supervised domain classifier, a gradient-boosted model trained to distinguish source from target on the features alone \citep{quionero2009dataset}. For each source-to-target pair we score the detectability of the target as the AUC of each alarm in separating source from target, and we ask whether that detectability predicts the transfer loss.
+
+\subsection{Pair Selection}
 
 We select eight source surveys to span geography and survey phase: Kenya, Nigeria, Bolivia, Egypt, Indonesia, the Philippines, Rwanda, and Haiti. For each source we pair it with all 69 remaining surveys, giving 552 source-to-target pairs. This is the full set of transfer directions for these sources, not a subsample, and we report it as such.
 
@@ -106,12 +120,6 @@ Domain clf. & 0.05 & 0.63 & $[-0.25,0.35]$ \\
 \caption{How well input-shift alarms predict transfer loss across 552 source-to-target pairs. AUROC is the alarm's ability to flag transfers with loss above 0.05, and the r range is across the eight sources. Both alarms are weak, and several per-source correlations are negative.}
 \label{tab:alarms}
 \end{table}
-
-\section{Related Work}
-
-Out-of-distribution detection has concentrated on vision and language, where the standard recipe fits a model on one dataset and scores the distance of a test input to the training distribution \citep{lee2018mahalanobis, liu2020energy, sun2022knn}, with unsupervised anomaly detectors such as isolation forest as a baseline \citep{liu2008isolation}. Distribution shift decomposes into covariate shift, where the inputs change, label shift, where the class prevalence changes, and concept drift, where the conditional outcome changes \citep{quionero2009dataset, gama2014concept}. Prior work notes that detecting shift is distinct from predicting its harm \citep{quionero2009dataset}. Our contribution is to quantify that distinction for tabular health data, where the inputs change little while the outcome relationship changes, the regime in which input-based detectors are least able to help.
-
-Machine learning for child mortality has mostly treated prediction as a one-time exercise \citep{bountogo2023machine}. We study the deployment step itself, and we do so with an outcome definition that matches the DHS life-table convention of restricting to fully exposed children \citep{croft2018guide}.
 
 \section{Limitations}
 
